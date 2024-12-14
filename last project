@@ -1,0 +1,64 @@
+const express = require('express');
+const fsdb = require('../modules/fsdb');
+const router = express.Router();
+
+// POST /api/register
+router.post('/register', async (req, res) => {
+  const { name, email, date, eventName } = req.body;
+  const ticketNumber = Date.now().toString();
+  const newRegistration = { ticketNumber, name, email, date, eventName };
+
+  try {
+    await fsdb.saveRegistration(newRegistration);
+    res.json(newRegistration);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to register for the event.' });
+  }
+});
+
+// GET /api/registrations
+router.get('/registrations', async (req, res) => {
+  try {
+    const registrations = await fsdb.getRegistrations();
+    res.json(registrations);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve registrations.' });
+  }
+});
+
+// GET /api/registrations/byname/:name
+router.get('/registrations/byname/:name', async (req, res) => {
+  const { name } = req.params;
+  try {
+    const registrations = await fsdb.getRegistrations();
+    const userRegistrations = registrations.filter(reg => reg.name === name);
+    res.json(userRegistrations);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve registrations by name.' });
+  }
+});
+
+// GET /api/registrations/event/:eventName
+router.get('/registrations/event/:eventName', async (req, res) => {
+  const { eventName } = req.params;
+  try {
+    const registrations = await fsdb.getRegistrations();
+    const eventRegistrations = registrations.filter(reg => reg.eventName === eventName);
+    res.json(eventRegistrations);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve registrations by event.' });
+  }
+});
+
+// GET /api/registrations/cancel/:ticketNumber
+router.get('/registrations/cancel/:ticketNumber', async (req, res) => {
+  const { ticketNumber } = req.params;
+  try {
+    await fsdb.cancelRegistration(ticketNumber);
+    res.json({ message: `Registration with ticket number ${ticketNumber} has been canceled.` });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to cancel registration.' });
+  }
+});
+
+module.exports = router;
